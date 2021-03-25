@@ -1,0 +1,209 @@
+/*这就是其中一个依赖，我把它截取出来了*/
+preconfig_%: preconfig_clean_cfg
+	@if [ -f $(BOOTLOADER_PATH)/u-boot-env/uboot-env-98*-eng.txt ] ; then \
+		rm $(BOOTLOADER_PATH)/u-boot-env/uboot-env-98*-eng.txt; \
+	fi
+	@if [ -d $(VENDDIR)/$(CONF)/$* ] ; then \
+		if egrep "^CONFIG_CMCC=y" $(VENDDIR)/$(CONF)/$*/config_kernel > /dev/null; then \
+			if [ -f $(VENDDIR)/$(CONF)/$*/backgroup_style.css ]; then \
+				cp $(VENDDIR)/$(CONF)/$*/*.css user/boa_e8/src/web_cmcc/style/;\
+			fi;\
+			touch $(LIBUSB_1_0_21_DIR)/aclocal.m4 $(LIBUSB_1_0_21_DIR)/configure $(LIBUSB_1_0_21_DIR)/Makefile.in;\
+			touch $(JSON_C_DIR)/aclocal.m4 $(JSON_C_DIR)/configure;\
+			touch $(EUDEV_3_2_DIR)/aclocal.m4 $(EUDEV_3_2_DIR)/configure $(EUDEV_3_2_DIR)/Makefile.in;\
+		fi; \
+    		if egrep "^CONFIG_CU=y" $(VENDDIR)/$(CONF)/$*/config_kernel > /dev/null; then \
+			./checkout_cu_package.sh; \
+			if [ -f $(VENDDIR)/$(CONF)/$*/backgroup_style.css ]; then \
+				cp $(VENDDIR)/$(CONF)/$*/*.css user/boa_e8/src/web_cu/style/;\
+			fi;\
+		fi; \
+		cp $(VENDDIR)/$(CONF)/$*/config .config && \
+		cp $(VENDDIR)/$(CONF)/$*/config_kernel $(LINUXDIR)/.config && \
+		cp $(VENDDIR)/$(CONF)/$*/config_user $(CONFIG_CONFIG) ; \
+		if egrep "^CONFIG_RTL8852AE_BACKPORTS=y" $(VENDDIR)/$(CONF)/$*/config_kernel > /dev/null; then \
+			cp $(VENDDIR)/$(CONF)/$*/config_backports-5.2.8-1 $(BACKPORT_DIR)/.config ; \
+			[ ! -L $(BACKPORT_DIR)/drivers/net/wireless/realtek/g6_wifi_driver ] || rm $(BACKPORT_DIR)/drivers/net/wireless/realtek/g6_wifi_driver ; \
+			ln -s $(KERNEL_DIR)/drivers/net/wireless/realtek/g6_wifi_driver $(BACKPORT_DIR)/drivers/net/wireless/realtek/g6_wifi_driver ; \
+		fi; \
+		if [ "$(CONFIG_PRODUCT)" = "luna_ap_mips" ];then  \
+			FLASH_TYPE=$$(cat .config | grep UBOOT_FLASH_TYPE) ;\
+			echo $$FLASH_TYPE;\
+			cd $(BOOTLOADER_PATH);\
+			rm -f FLASH_TYPE* ;\
+			if [ "$$FLASH_TYPE" = "UBOOT_FLASH_TYPE=SPI_NAND" ];then\
+				touch FLASH_TYPE_SPI_NAND ;\
+			fi;\
+			if [ "$$FLASH_TYPE" = "UBOOT_FLASH_TYPE=NOR" ];then\
+                                touch FLASH_TYPE_NOR ;\
+                        fi;\
+			cd - ;\
+		fi;\
+		if [ "$(CONFIG_PRODUCT)" = "luna" ];then  \
+			if [ -f  $(VENDDIR)/$(CONF)/$*/ca77xx-nand.dtsi  ] ;then cp $(VENDDIR)/$(CONF)/$*/ca77xx-nand.dtsi $(LINUX_DTS_DIR)/ca77xx-nand.dtsi ; \
+			else cp $(LINUX_DTS_DIR)/default/ca77xx-nand.dtsi $(LINUX_DTS_DIR)/ca77xx-nand.dtsi ; \
+			fi ;\
+			find $(VENDDIR)/$(CONF)/$*/ -name 'uboot-env-*.txt' -exec cp {} $(BOOTLOADER_PATH)/u-boot-env/  \;; \
+			if [ -f $(VENDDIR)/$(CONF)/$*/device_ubinize.cfg ] ; then  \
+				ln -sf $(VENDDIR)/$(CONF)/$*/device_ubinize.cfg $(ROOTDIR)/tools/device_ubinize.cfg;  \
+			else  \
+				if egrep "^CONFIG_MIPS=y" $(VENDDIR)/$(CONF)/$*/config_kernel > /dev/null; then \
+					ln -sf $(DEFAULT_UBINIZE_CFG_MIPS) $(ROOTDIR)/tools/device_ubinize.cfg; \
+				else \
+					ln -sf $(DEFAULT_UBINIZE_CFG_ARM) $(ROOTDIR)/tools/device_ubinize.cfg; \
+				fi;\
+			fi ; \
+		fi ;\
+		if [ "$(CONFIG_PRODUCT)" = "luna_xdsl" ];then  \
+			if [ -f  $(VENDDIR)/$(CONF)/$*/ca77xx-nand.dtsi  ] ;then cp $(VENDDIR)/$(CONF)/$*/ca77xx-nand.dtsi $(LINUX_DTS_DIR)/ca77xx-nand.dtsi ; \
+			/*这里我是能够理解的，因为前面有if 这里是做一个判断，-f filename 如果 filename为常规文件，则为真*/
+
+
+
+
+
+            
+            else cp $(LINUX_DTS_DIR)/default/ca77xx-nand.dtsi $(LINUX_DTS_DIR)/ca77xx-nand.dtsi ; \
+			fi ;\
+			find $(VENDDIR)/$(CONF)/$*/ -name 'uboot-env-*.txt' -exec cp {} $(BOOTLOADER_PATH)/u-boot-env/  \;; \
+			if [ -f $(VENDDIR)/$(CONF)/$*/device_ubinize.cfg ] ; then  \
+				ln -sf $(VENDDIR)/$(CONF)/$*/device_ubinize.cfg $(ROOTDIR)/tools/device_ubinize.cfg;  \
+			else  \
+				if egrep "^CONFIG_MIPS=y" $(VENDDIR)/$(CONF)/$*/config_kernel > /dev/null; then \
+					ln -sf $(DEFAULT_UBINIZE_CFG_MIPS) $(ROOTDIR)/tools/device_ubinize.cfg; \
+				else \
+					ln -sf $(DEFAULT_UBINIZE_CFG_ARM) $(ROOTDIR)/tools/device_ubinize.cfg; \
+				fi;\
+			fi ; \
+		fi ;\
+
+
+
+
+
+
+
+
+
+
+        /*就是这里，在我理解看来，Makefile的命令都是可以在shell里面直接运行的，像上面 有CP、find、ln命令一样，
+            但是这里就[ -f $(VENDDIR)/$(CONF)/$*/run.sh ] 这样可以直接启动路径下的脚本吗？
+            $(VENDDIR)/$(CONF)/$*也是指向conf变量路径下的一些文件~这些都是启动吗？
+        */
+
+		[ -f $(VENDDIR)/$(CONF)/$*/run.sh ] &&  $(VENDDIR)/$(CONF)/$*/run.sh $(VENDDIR)/$(CONF)/$* ; \
+		[ -f $(ROOTDIR)/ca_packages/scfg_cfg_cp.sh ] &&  $(ROOTDIR)/ca_packages/scfg_cfg_cp.sh  $(VENDDIR)/$(CONF)/$* ; \
+		[ -f  $(VENDDIR)/$(CONF)/$*/rtl8198f-engboard.dts  ]  && \
+			ln -sf $(VENDDIR)/$(CONF)/$*/rtl8198f-engboard.dts $(LINUX_DTS_DIR)/rtl8198f-engboard.dts ; \
+
+            /*这里我能理解  && 后面跟ln 命令  同时做链接的动作*/
+
+
+
+
+
+
+
+
+		[ -f  $(VENDDIR)/$(CONF)/$*/uboot-env-98f-eng.txt  ]  && \
+			ln -sf $(VENDDIR)/$(CONF)/$*/uboot-env-98f-eng.txt  $(BOOTLOADER_PATH)/u-boot-env/uboot-env-98f-eng.txt ; \
+		[ -f  $(VENDDIR)/$(CONF)/$*/uboot-env-98d-eng.txt  ]  && \
+			ln -sf $(VENDDIR)/$(CONF)/$*/uboot-env-98d-eng.txt  $(BOOTLOADER_PATH)/u-boot-env/uboot-env-98d-eng.txt ; \
+		[ -f  $(VENDDIR)/$(CONF)/$*/config_busybox_1221 ] && cp $(VENDDIR)/$(CONF)/$*/config_busybox_1221 $(BUSYBOXDIR_DEST)/.config ; \
+
+
+
+
+
+
+
+		if [ -f $(VENDDIR)/$(CONF)/$*/soc.h ]; then \
+			cp $(VENDDIR)/$(CONF)/$*/soc.h $(LINUXDIR)/include/soc/soc.h ; \
+		fi; \
+		if [ -f $(VENDDIR)/$(CONF)/$*/luna_cfg.h ]; then \
+			cp $(VENDDIR)/$(CONF)/$*/luna_cfg.h $(LINUXDIR)/include/soc/luna_cfg.h ; \
+		else \
+			echo '/* dummy file */' > $(LINUXDIR)/include/soc/luna_cfg.h ; \
+		fi; \
+		[ -f config/config_default.xml ] && mv config/config_default.xml config/config_default.xml.backup; \
+		[ -f config/config_default_hs.xml ] && mv config/config_default_hs.xml config/config_default_hs.xml.backup; \
+		cp $(VENDDIR)/$(CONF)/$*/config_default.xml config/config_default.xml ; \
+		cp $(VENDDIR)/$(CONF)/$*/config_default_hs.xml config/config_default_hs.xml ; \
+		if egrep "^CONFIG_E8B=y" $(LINUXDIR)/.config > /dev/null; then \
+                [ -d config/province.bak ] && rm -rf config/province.bak; \
+                /*这里也是， -d 后面跟着一个文件，没有命令*/
+
+
+
+
+
+
+                [ -d config/province ] && mv config/province config/province.bak; \
+				if egrep "^CONFIG_CMCC=y" $(LINUXDIR)/.config > /dev/null; then \
+					if egrep "^CONFIG_USER_CONF_ON_XMLFILE=y" $(ROOTDIR)/config/.config > /dev/null; then \
+						if [ -d $(VENDDIR)/$(CONF)/province_cmcc_xml ]; then \
+							mkdir -p config/province ;\
+							cp -raf $(VENDDIR)/$(CONF)/province_cmcc_xml/* config/province/. ;\
+						fi;\
+					else \
+						if [ -d $(VENDDIR)/$(CONF)/province_cmcc ]; then \
+							mkdir -p config/province ;\
+							cp -raf $(VENDDIR)/$(CONF)/province_cmcc/* config/province/. ;\
+						fi;\
+					fi;\
+				else \
+					if egrep "^CONFIG_USER_CONF_ON_XMLFILE=y" $(ROOTDIR)/config/.config > /dev/null; then \
+						if egrep "^CONFIG_CU=y" $(LINUXDIR)/.config > /dev/null; then \
+							if [ -d $(VENDDIR)/$(CONF)/province_cu ]; then \
+								mkdir -p config/province ;\
+								cp -raf $(VENDDIR)/$(CONF)/province_cu/* config/province/. ;\
+							fi;\
+						else \
+							if [ -d $(VENDDIR)/$(CONF)/$(PROVINCE_NAME) ]; then \
+								mkdir -p config/province ;\
+								cp -raf $(VENDDIR)/$(CONF)/$(PROVINCE_NAME)/* config/province/. ;\
+							fi;\
+						fi;\
+					else \
+        					if egrep "^CONFIG_CU=y" $(LINUXDIR)/.config > /dev/null; then \
+							if [ -d $(VENDDIR)/$(CONF)/province_cu ]; then \
+								mkdir -p config/province ;\
+								cp -raf $(VENDDIR)/$(CONF)/province_cu/* config/province/. ;\
+							fi;\
+						else \
+							if [ -d $(VENDDIR)/$(CONF)/$(PROVINCE_NAME) ]; then \
+								mkdir -p config/province ;\
+								cp -raf $(VENDDIR)/$(CONF)/$(PROVINCE_NAME)/* config/province/. ;\
+							fi;\
+						fi;\
+        				fi;\
+                		fi;\
+		else \
+			[ -d config/province.bak ] && rm -rf config/province.bak; \
+			[ -d config/province ] && mv config/province config/province.bak; \
+			if [ -d $(VENDDIR)/conf44/$*/province ]; then \
+				mkdir -p config/province ;\
+				cp -raf $(VENDDIR)/conf44/$*/province/* config/province/. ;\
+			fi;\
+		fi; \
+		[ -f $(BOOTLOADER_PATH)/Flash_and_DDR_Support.txt ] && rm  $(BOOTLOADER_PATH)/Flash_and_DDR_Support.txt;  \
+		[ -f $(VENDDIR)/$(CONF)/$*/Flash_and_DDR_Support.txt ] && cp  $(VENDDIR)/$(CONF)/$*/Flash_and_DDR_Support.txt  $(BOOTLOADER_PATH)/ ; \
+		[ -f  $(VENDDIR)/$(CONF)/$*/config_ca_ne  ]  && cp $(VENDDIR)/$(CONF)/$*/config_ca_ne ca_packages/ca-network-engine/1.0-r0/ca-network-engine-1.0/configs/g3lite_defconfig ; \
+		if [ "$(LINUXDIR)" = "linux-4.4.x" ];then  \
+			echo "Configuration44 $* loaded." ; \
+			touch preconfig44_$*_loaded ; \
+		else \
+			echo "Configuration318 $* loaded." ; \
+			touch preconfig318_$*_loaded ; \
+		fi;\
+	else \
+		echo "No $(CONFIG_PRODUCT) configuration found" ; \
+	fi
+	@# FIXME Workaround for those who can not access VOIP
+	@if [ ! -d $(ROOTDIR)/rtk_voip/kernel ]; then \
+		mkdir -p $(ROOTDIR)/rtk_voip/kernel;	\
+		touch $(ROOTDIR)/rtk_voip/kernel/Kconfig; \
+		mkdir -p $(ROOTDIR)/rtk_voip/aipc_char;	\
+		touch $(ROOTDIR)/rtk_voip/aipc_char/Kconfig; \
+	fi
+	@# Checkout src for 98D
